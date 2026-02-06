@@ -25,7 +25,7 @@ def main() -> int:
     parser.add_argument(
         "--query",
         type=str,
-        default="Show top 3 US trending videos with metadata and thumbnails",
+        default="Show top 3 trending videos with metadata and thumbnails",
         help="Query to process"
     )
     parser.add_argument(
