@@ -11,7 +11,12 @@ from src.tools.youtube import (
     fetch_transcript,
     search_youtube,
     get_full_metadata,
-    get_thumbnails
+    get_thumbnails,
+    get_channel_info,
+    get_playlist_info,
+    get_playlist_videos,
+    fetch_transcript_with_timestamps,
+    list_transcript_languages
 )
 
 __all__ = [
@@ -24,4 +29,9 @@ __all__ = [
     "search_youtube",
     "get_full_metadata",
     "get_thumbnails",
+    "get_channel_info",
+    "get_playlist_info",
+    "get_playlist_videos",
+    "fetch_transcript_with_timestamps",
+    "list_transcript_languages",
 ]

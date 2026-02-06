@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     google_api_key: str
     
     # Optional settings with defaults
-    model_name: str = "gemini-3-pro-preview"
+    model_name: str = "gemini-3-flash-preview"
     model_provider: str = "google_genai"
     log_level: str = "INFO"
     
