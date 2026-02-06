@@ -1,19 +1,37 @@
 import re
 from pytube import Search as youtube_search
+from langchain_core.messages import ToolMessage
 from langchain.tools import tool
+from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+
 from typing import List, Dict
 
 import logging
 import yt_dlp
 from youtube_transcript_api import YouTubeTranscriptApi
 
-__all__ = ["extract_video_id", "fetch_transcript", "search_youtube", "get_full_metadata", "get_thumbnails"]
+__all__ = ["extract_video_id", "fetch_transcript", "search_youtube", "get_full_metadata", "get_thumbnails", "execute_tool"]
 
 def _get_suppressed_yt_dlp_logger():
     """Helper function to get a yt-dlp logger with warnings suppressed."""
     yt_dpl_logger = logging.getLogger('yt_dlp')
     yt_dpl_logger.setLevel(logging.ERROR)
     return yt_dpl_logger
+
+# Define the processing steps
+def execute_tool(tool_call):
+    """Execute single tool call and return ToolMessage"""
+    try:
+        result = _tool_mapping[tool_call["name"]].invoke(tool_call["args"])
+        return ToolMessage(
+            content=str(result),
+            tool_call_id=tool_call["id"]
+        )
+    except Exception as e:
+        return ToolMessage(
+            content=f"Error: {str(e)}",
+            tool_call_id=tool_call["id"]
+        )
 
 @tool
 def extract_video_id(url: str) -> str:
@@ -130,3 +148,12 @@ def get_thumbnails(url: str) -> List[Dict]:
 
     except Exception as e:
         return [{"error": f"Failed to get thumbnails: {str(e)}"}]
+
+
+_tool_mapping = {
+    "get_thumbnails": get_thumbnails,
+    "extract_video_id": extract_video_id,
+    "fetch_transcript": fetch_transcript,
+    "search_youtube": search_youtube,
+    "get_full_metadata": get_full_metadata
+}
