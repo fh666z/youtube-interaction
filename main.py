@@ -1,7 +1,8 @@
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-from youtube_tools import extract_video_id, fetch_transcript, search_youtube, get_full_metadata, get_thumbnails, execute_tool
+from youtube_tools import extract_video_id, fetch_transcript, search_youtube, get_full_metadata, get_thumbnails
+from tool_call_processing import recursive_chain
 import os
 from pprint import pprint
 import json
@@ -33,52 +34,34 @@ if __name__ == "__main__":
     llm_with_tools = llm.bind_tools(tools)
 
 
-    summarization_chain = (
-        # Start with initial query
-        RunnablePassthrough.assign(
-            messages=lambda x: [HumanMessage(content=x["query"])]
-        )
-        # First LLM call (extract video ID)
-        | RunnablePassthrough.assign(
-            ai_response=lambda x: llm_with_tools.invoke(x["messages"])
-        )
-        # Process first tool call
-        | RunnablePassthrough.assign(
-            tool_messages=lambda x: [
-                execute_tool(tc) for tc in x["ai_response"].tool_calls
-            ]
-        )
-        # Update message history
-        | RunnablePassthrough.assign(
-            messages=lambda x: x["messages"] + [x["ai_response"]] + x["tool_messages"]
-        )
-        # Second LLM call (fetch transcript)
-        | RunnablePassthrough.assign(
-            ai_response2=lambda x: llm_with_tools.invoke(x["messages"])
-        )
-        # Process second tool call
-        | RunnablePassthrough.assign(
-            tool_messages2=lambda x: [
-                execute_tool(tc) for tc in x["ai_response2"].tool_calls
-            ]
-        )
-        # Final message update
-        | RunnablePassthrough.assign(
-            messages=lambda x: x["messages"] + [x["ai_response2"]] + x["tool_messages2"]
-        )
-        # Generate final summary
-        | RunnablePassthrough.assign(
-            summary=lambda x: llm_with_tools.invoke(x["messages"]).content
-        )
-        # Return just the summary text
-        | RunnableLambda(lambda x: x["summary"])
+    universal_chain = (
+        RunnableLambda(lambda x: [HumanMessage(content=x["query"])])
+        | RunnableLambda(lambda messages: messages + [llm_with_tools.invoke(messages)])
+        | recursive_chain(llm_with_tools)
     )
 
-    print("Querying the LLM with the summarization chain")
-    result = summarization_chain.invoke({
-        "query": "Summarize this YouTube video: https://www.youtube.com/watch?v=1bUy-1hGZpI"
-    })
+    prompt = f"""
+        Please analyze this YouTube video and provide a comprehensive summary.
 
-    pprint(result)
-    #print("Video Summary:\n", result.content)
-    
+        VIDEO TITLE: {video_metadata['title']}
+        CHANNEL: {video_metadata['channel']}
+        VIEWS: {video_metadata['views']}
+        DURATION: {video_metadata['duration']} seconds
+        LIKES: {video_metadata['likes']}
+
+        TRANSCRIPT EXCERPT:
+        {transcript[:3000]}... (transcript truncated for brevity)
+
+        Based on this information, please provide:
+        1. A concise summary of the video content (3-5 bullet points)
+        2. The main topics or themes discussed
+        3. The intended audience for this content
+        4. A brief analysis of why this video might be performing well (or not)
+        """
+    query = {"query": "Show top 3 US trending videos with metadata and thumbnails"}
+    try:
+        result = universal_chain.invoke(query)
+        pprint(result[-1].text)
+    except Exception as e:
+        print("Non-critical network error:", e)
+
