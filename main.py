@@ -40,24 +40,24 @@ if __name__ == "__main__":
         | recursive_chain(llm_with_tools)
     )
 
-    prompt = f"""
-        Please analyze this YouTube video and provide a comprehensive summary.
-
-        VIDEO TITLE: {video_metadata['title']}
-        CHANNEL: {video_metadata['channel']}
-        VIEWS: {video_metadata['views']}
-        DURATION: {video_metadata['duration']} seconds
-        LIKES: {video_metadata['likes']}
-
-        TRANSCRIPT EXCERPT:
-        {transcript[:3000]}... (transcript truncated for brevity)
-
-        Based on this information, please provide:
-        1. A concise summary of the video content (3-5 bullet points)
-        2. The main topics or themes discussed
-        3. The intended audience for this content
-        4. A brief analysis of why this video might be performing well (or not)
-        """
+#   prompt = f"""
+#       Please analyze this YouTube video and provide a comprehensive summary.
+#
+#       VIDEO TITLE: {video_metadata['title']}
+#       CHANNEL: {video_metadata['channel']}
+#       VIEWS: {video_metadata['views']}
+#       DURATION: {video_metadata['duration']} seconds
+#       LIKES: {video_metadata['likes']}
+#
+#       TRANSCRIPT EXCERPT:
+#       {transcript[:3000]}... (transcript truncated for brevity)
+#
+#       Based on this information, please provide:
+#       1. A concise summary of the video content (3-5 bullet points)
+#       2. The main topics or themes discussed
+#       3. The intended audience for this content
+#       4. A brief analysis of why this video might be performing well (or not)
+#       """
     query = {"query": "Show top 3 US trending videos with metadata and thumbnails"}
     try:
         result = universal_chain.invoke(query)
