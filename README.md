@@ -72,7 +72,7 @@ export GOOGLE_API_KEY=your_api_key_here  # On Windows: set GOOGLE_API_KEY=your_a
 
 ## Usage
 
-### Basic Usage
+### Basic CLI Usage
 
 Run with default query:
 ```bash
@@ -89,6 +89,35 @@ Set log level:
 python main.py --log-level DEBUG
 ```
 
+### HTTP Service Usage
+
+You can also run the system as a long-running HTTP service with a REST API.
+
+Start the API server with Uvicorn:
+
+```bash
+uvicorn src.api.app:app --host 0.0.0.0 --port 8000
+```
+
+Then send a query via HTTP:
+
+```bash
+curl -X POST "http://localhost:8000/query" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"query\": \"Show top 3 trending videos with metadata and thumbnails\"}"
+```
+
+You can check the health of the service:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Interactive API documentation is available at:
+
+- Swagger UI: `http://localhost:8000/docs`
+- OpenAPI JSON: `http://localhost:8000/openapi.json`
+
 ### Programmatic Usage
 
 ```python
@@ -101,6 +130,49 @@ chain = create_chain()
 result = invoke_chain(chain, "Show me top 3 trending videos with metadata")
 print(result)
 ```
+
+## Service Management
+
+The HTTP service is designed to be managed like a typical long-running process.
+
+### Local development
+
+- Start service:
+
+```bash
+uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+- Stop service:
+
+Use `Ctrl+C` in the terminal where Uvicorn is running.
+
+### Example production options
+
+You can choose one of several approaches depending on your environment:
+
+- **Docker / containerized deployment**
+  - Build an image that runs `uvicorn src.api.app:app`.
+  - Manage lifecycle with `docker compose up/down/restart`.
+
+- **Linux systemd service**
+  - Create a systemd unit file that runs:
+
+    ```ini
+    ExecStart=/path/to/venv/bin/uvicorn src.api.app:app --host 0.0.0.0 --port 8000
+    ```
+
+  - Then use:
+
+    ```bash
+    systemctl start youtube-interaction
+    systemctl stop youtube-interaction
+    systemctl restart youtube-interaction
+    ```
+
+- **Windows service**
+  - Use a service wrapper such as NSSM to run the same Uvicorn command as a Windows service.
+  - Start/stop via the Windows Services UI or `sc start/stop`.
 
 ## Configuration
 
